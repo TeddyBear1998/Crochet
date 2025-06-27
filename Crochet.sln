@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36221.1 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "crochet.client", "crochet.client\crochet.client.esproj", "{BC353AC8-7EE6-94A9-C99A-C01B24A682CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crochet.Server", "Crochet.Server\Crochet.Server.csproj", "{B95E4B86-DB0A-44DE-A0FE-ACFF211840CE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BC353AC8-7EE6-94A9-C99A-C01B24A682CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC353AC8-7EE6-94A9-C99A-C01B24A682CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC353AC8-7EE6-94A9-C99A-C01B24A682CA}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{BC353AC8-7EE6-94A9-C99A-C01B24A682CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC353AC8-7EE6-94A9-C99A-C01B24A682CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC353AC8-7EE6-94A9-C99A-C01B24A682CA}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{B95E4B86-DB0A-44DE-A0FE-ACFF211840CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B95E4B86-DB0A-44DE-A0FE-ACFF211840CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B95E4B86-DB0A-44DE-A0FE-ACFF211840CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B95E4B86-DB0A-44DE-A0FE-ACFF211840CE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CC069AFA-C032-49E5-95FC-B61648C37AE6}
+	EndGlobalSection
+EndGlobal
