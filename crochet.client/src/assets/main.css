@@ -49,3 +49,43 @@ a,
     background-color: hsla(160, 100%, 37%, 0.2);
   }
 }
+
+@media (max-width: 700px) {
+  .main-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .side-panel-wrapper {
+    flex: none;
+    min-width: 0;
+    width: 100vw;
+    height: auto;
+    padding: 1rem 0.5rem;
+    box-sizing: border-box;
+    border-bottom: 1px solid #22283122;
+  }
+
+  .main-content {
+    flex: none;
+    width: 100vw;
+    height: 60vh;
+    min-height: 300px;
+    max-height: 70vh;
+    padding: 1rem 0.5rem;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 400px) {
+  .side-panel-wrapper {
+    padding: 0.5rem 0.2rem;
+  }
+
+  .main-content {
+    padding: 0.5rem 0.2rem;
+  }
+}

@@ -93,6 +93,42 @@ function onContextMenu(e) {
 // Drag logic for stitch placement
 const isPlacing = ref(false)
 
+// Touch support for mobile drawing
+let lastTouchedCell = { row: null, col: null }
+
+function handleSquareTouchStart(row, col, e) {
+  isPlacing.value = true
+  lastTouchedCell = { row, col }
+  const selected = getSelectedType()
+  if (selected !== undefined) {
+    props.updateGridStitch(row, col, selected)
+  } else {
+    props.updateGridStitch(row, col, 'empty')
+  }
+  e.preventDefault()
+}
+function handleSquareTouchMove(row, col, e) {
+  if (!isPlacing.value) return
+  // Only update if moved to a new cell
+  if (lastTouchedCell.row !== row || lastTouchedCell.col !== col) {
+    lastTouchedCell = { row, col }
+    const selected = getSelectedType()
+    if (selected !== undefined) {
+      props.updateGridStitch(row, col, selected)
+    } else {
+      props.updateGridStitch(row, col, 'empty')
+    }
+  }
+  e.preventDefault()
+}
+function handleTouchEnd() {
+  isPlacing.value = false
+  lastTouchedCell = { row: null, col: null }
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('touchend', handleTouchEnd)
+}
+
 // Helper to get the selected type from window or props
 function getSelectedType() {
   if (typeof window !== 'undefined' && window.selectedType && window.selectedType.value) {
@@ -251,6 +287,8 @@ function exportGridToJson() {
                   fill="transparent"
                   @mousedown="(e) => handleSquareMouseDown(row-1, col-1, e)"
                   @mouseenter="() => handleSquareMouseEnter(row-1, col-1)"
+                  @touchstart="(e) => handleSquareTouchStart(row-1, col-1, e)"
+                  @touchmove="(e) => handleSquareTouchMove(row-1, col-1, e)"
                   style="cursor:pointer;"
                 />
                 <g
