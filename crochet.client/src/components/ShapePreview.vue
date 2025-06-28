@@ -95,8 +95,19 @@ const isPlacing = ref(false)
 
 // Touch support for mobile drawing
 let lastTouchedCell = { row: null, col: null }
+let isTwoFingerScroll = false
+let lastScroll = { x: 0, y: 0 }
 
 function handleSquareTouchStart(row, col, e) {
+  if (e.touches && e.touches.length === 2) {
+    // Two-finger scroll start
+    isTwoFingerScroll = true
+    const container = containerRef.value
+    lastScroll.x = e.touches[0].clientX
+    lastScroll.y = e.touches[0].clientY
+    return
+  }
+  isTwoFingerScroll = false
   isPlacing.value = true
   lastTouchedCell = { row, col }
   const selected = getSelectedType()
@@ -108,6 +119,18 @@ function handleSquareTouchStart(row, col, e) {
   e.preventDefault()
 }
 function handleSquareTouchMove(row, col, e) {
+  if (isTwoFingerScroll && e.touches && e.touches.length === 2) {
+    // Two-finger scroll
+    const container = containerRef.value
+    const dx = e.touches[0].clientX - lastScroll.x
+    const dy = e.touches[0].clientY - lastScroll.y
+    container.scrollLeft -= dx
+    container.scrollTop -= dy
+    lastScroll.x = e.touches[0].clientX
+    lastScroll.y = e.touches[0].clientY
+    e.preventDefault()
+    return
+  }
   if (!isPlacing.value) return
   // Only update if moved to a new cell
   if (lastTouchedCell.row !== row || lastTouchedCell.col !== col) {
@@ -121,9 +144,10 @@ function handleSquareTouchMove(row, col, e) {
   }
   e.preventDefault()
 }
-function handleTouchEnd() {
+function handleTouchEnd(e) {
   isPlacing.value = false
   lastTouchedCell = { row: null, col: null }
+  isTwoFingerScroll = false
 }
 if (typeof window !== 'undefined') {
   window.addEventListener('touchend', handleTouchEnd)

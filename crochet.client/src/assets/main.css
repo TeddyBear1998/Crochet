@@ -15,7 +15,7 @@
 
 .side-panel-wrapper {
   flex: 0 0 340px;
-  display: flex;
+  display: block;
   align-items: flex-start;
   justify-content: flex-start;
   padding: 2rem 1rem 2rem 2rem;
@@ -23,6 +23,8 @@
   min-width: 340px;
   box-sizing: border-box;
   height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .main-content {
