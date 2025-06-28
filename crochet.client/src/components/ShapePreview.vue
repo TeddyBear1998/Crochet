@@ -56,6 +56,35 @@ const gridLines = computed(() => {
   return lines
 })
 
+// Helper: get cell clip path id
+function getCellClipId(row, col) {
+  return `cell-clip-${props.shape}-${row}-${col}`
+}
+
+// Helper: generate SVG path for cell-shape intersection
+function getCellClipPath(row, col) {
+  const x = (col) * shapeStyle.value.width / gridCountX.value;
+  const y = (row) * shapeStyle.value.height / gridCountY.value;
+  const w = shapeStyle.value.width / gridCountX.value;
+  const h = shapeStyle.value.height / gridCountY.value;
+  if (props.shape === 'Circle') {
+    // Circle center and radius
+    const cx = shapeStyle.value.width / 2;
+    const cy = shapeStyle.value.height / 2;
+    const r = Math.min(shapeStyle.value.width, shapeStyle.value.height) / 2;
+    // SVG: cell rect, circle
+    return `<clipPath id='${getCellClipId(row, col)}'><rect x='${x}' y='${y}' width='${w}' height='${h}'/><circle cx='${cx}' cy='${cy}' r='${r}'/></clipPath>`;
+  }
+  if (props.shape === 'Triangle') {
+    // SVG: cell rect, triangle
+    const w = shapeStyle.value.width;
+    const h = shapeStyle.value.height;
+    return `<clipPath id='${getCellClipId(row, col)}'><rect x='${x}' y='${y}' width='${shapeStyle.value.width / gridCountX.value}' height='${shapeStyle.value.height / gridCountY.value}'/><polygon points='${w/2},0 ${w},${h} 0,${h}'/></clipPath>`;
+  }
+  // For other shapes, just use the cell rect
+  return `<clipPath id='${getCellClipId(row, col)}'><rect x='${x}' y='${y}' width='${w}' height='${h}'/></clipPath>`;
+}
+
 // Panning logic
 const containerRef = ref(null)
 let isPanning = false
@@ -270,6 +299,39 @@ function exportGridToJson() {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
+
+function isCellInTriangle(row, col) {
+  // Calculate the center of the cell
+  const x = (col + 0.5) / gridCountX.value * shapeStyle.value.width;
+  const y = (row + 0.5) / gridCountY.value * shapeStyle.value.height;
+  // Triangle vertices
+  const x0 = shapeStyle.value.width / 2, y0 = 0;
+  const x1 = shapeStyle.value.width, y1 = shapeStyle.value.height;
+  const x2 = 0, y2 = shapeStyle.value.height;
+  // Barycentric technique
+  const denom = ((y1 - y2)*(x0 - x2) + (x2 - x1)*(y0 - y2));
+  const a = ((y1 - y2)*(x - x2) + (x2 - x1)*(y - y2)) / denom;
+  const b = ((y2 - y0)*(x - x2) + (x0 - x2)*(y - y2)) / denom;
+  const c = 1 - a - b;
+  return a >= 0 && b >= 0 && c >= 0;
+}
+
+function isCellInShape(row, col) {
+  if (props.shape === 'Circle') {
+    // Check if cell center is inside the circle
+    const cx = shapeStyle.value.width / 2;
+    const cy = shapeStyle.value.height / 2;
+    const r = Math.min(shapeStyle.value.width, shapeStyle.value.height) / 2;
+    const x = (col + 0.5) / gridCountX.value * shapeStyle.value.width;
+    const y = (row + 0.5) / gridCountY.value * shapeStyle.value.height;
+    return ((x - cx) * (x - cx) + (y - cy) * (y - cy)) <= r * r;
+  }
+  if (props.shape === 'Triangle') {
+    return isCellInTriangle(row, col);
+  }
+  // For other shapes, always true
+  return true;
+}
 </script>
 <template>
   <div class="shape-preview">
@@ -295,6 +357,10 @@ function exportGridToJson() {
           <clipPath id="circle-clip" v-if="shape === 'Circle'">
             <circle :cx="shapeStyle.width/2" :cy="shapeStyle.height/2" :r="Math.min(shapeStyle.width, shapeStyle.height)/2" />
           </clipPath>
+          <!-- Per-cell clipPaths for Circle and Triangle -->
+          <template v-if="shape === 'Circle' || shape === 'Triangle'">
+            <g v-html="[...Array(gridCountY).keys()].map(row => [...Array(gridCountX).keys()].map(col => getCellClipPath(row, col)).join('')).join('')" />
+          </template>
         </defs>
         <rect v-if="shape !== 'Circle'" x="0" y="0" :width="shapeStyle.width" :height="shapeStyle.height" fill="#1769aa22" stroke="#1769aa" stroke-width="2" />
         <circle v-else :cx="shapeStyle.width/2" :cy="shapeStyle.height/2" :r="Math.min(shapeStyle.width, shapeStyle.height)/2" fill="#1769aa22" stroke="#1769aa" stroke-width="2" />
@@ -317,6 +383,7 @@ function exportGridToJson() {
                 />
                 <g
                   v-if="props.gridStitches && props.gridStitches[row-1] && props.gridStitches[row-1][col-1]"
+                  :clip-path="(shape === 'Circle' || shape === 'Triangle') ? `url(#${getCellClipId(row-1, col-1)})` : undefined"
                   v-html="renderStitchSymbol(props.gridStitches[row-1][col-1], ((col-1) * shapeStyle.width / gridCountX), ((row-1) * shapeStyle.height / gridCountY), shapeStyle.width / gridCountX)"
                 />
               </template>
@@ -324,18 +391,67 @@ function exportGridToJson() {
           </g>
           <line v-for="(line, idx) in gridLines" :key="'l'+idx" v-bind="line" stroke="#1769aa55" stroke-width="1" />
         </g>
+        <!-- Overlay: indicators for hidden stitches -->
+        <g>
+          <template v-for="row in gridCountY" :key="'ind-row-'+(row-1)">
+            <template v-for="col in gridCountX" :key="'ind-sq-'+(row-1)+'-'+(col-1)">
+              <g
+                v-if="props.gridStitches && props.gridStitches[row-1] && props.gridStitches[row-1][col-1] && props.gridStitches[row-1][col-1].type !== 'empty' && !isCellInShape(row-1, col-1)"
+                v-html="renderStitchSymbol(props.gridStitches[row-1][col-1], ((col-1) * shapeStyle.width / gridCountX), ((row-1) * shapeStyle.height / gridCountY), shapeStyle.width / gridCountX)"
+                style="opacity:0.35; pointer-events:none;"
+              />
+            </template>
+          </template>
+        </g>
       </svg>
       <svg v-else-if="shape === 'Triangle'" :width="shapeStyle.width" :height="shapeStyle.height" :viewBox="`0 0 ${shapeStyle.width} ${shapeStyle.height}`" style="display: block; margin: 0 auto;">
         <defs>
           <clipPath id="triangle-clip">
             <polygon :points="`${shapeStyle.width/2},0 ${shapeStyle.width},${shapeStyle.height} 0,${shapeStyle.height}`" />
           </clipPath>
+          <!-- Per-cell clipPaths for Triangle -->
+          <g v-html="[...Array(gridCountY).keys()].map(row => [...Array(gridCountX).keys()].map(col => getCellClipPath(row, col)).join('')).join('')" />
         </defs>
         <polygon :points="`${shapeStyle.width/2},0 ${shapeStyle.width},${shapeStyle.height} 0,${shapeStyle.height}`" fill="#1769aa22" stroke="#1769aa" stroke-width="2" />
         <g :clip-path="'url(#triangle-clip)'">
-          <!-- Render grid squares for triangle (optional, not implemented here) -->
+          <!-- Render grid squares for triangle -->
+          <g>
+            <template v-for="row in gridCountY" :key="'row-'+(row-1)">
+              <template v-for="col in gridCountX" :key="'sq-'+(row-1)+'-'+(col-1)">
+                <rect
+                  :x="((col-1) * shapeStyle.width / gridCountX)"
+                  :y="((row-1) * shapeStyle.height / gridCountY)"
+                  :width="shapeStyle.width / gridCountX"
+                  :height="shapeStyle.height / gridCountY"
+                  fill="transparent"
+                  @mousedown="(e) => handleSquareMouseDown(row-1, col-1, e)"
+                  @mouseenter="() => handleSquareMouseEnter(row-1, col-1)"
+                  @touchstart="(e) => handleSquareTouchStart(row-1, col-1, e)"
+                  @touchmove="(e) => handleSquareTouchMove(row-1, col-1, e)"
+                  style="cursor:pointer;"
+                />
+                <g
+                  v-if="props.gridStitches && props.gridStitches[row-1] && props.gridStitches[row-1][col-1] && isCellInShape(row-1, col-1)"
+                  :clip-path="`url(#${getCellClipId(row-1, col-1)})`"
+                  v-html="renderStitchSymbol(props.gridStitches[row-1][col-1], ((col-1) * shapeStyle.width / gridCountX), ((row-1) * shapeStyle.height / gridCountY), shapeStyle.width / gridCountX)"
+                />
+              </template>
+            </template>
+          </g>
           <line v-for="i in (gridCountX - 1)" :key="'v'+i" :x1="(shapeStyle.width/gridCountX)*i" y1="0" :x2="(shapeStyle.width/gridCountX)*i" :y2="shapeStyle.height" stroke="#1769aa55" stroke-width="1" />
           <line v-for="i in (gridCountY - 1)" :key="'h'+i" x1="0" :y1="(shapeStyle.height/gridCountY)*i" :x2="shapeStyle.width" :y2="(shapeStyle.height/gridCountY)*i" stroke="#1769aa55" stroke-width="1" />
+        </g>
+        <!-- Overlay: indicators for hidden stitches in triangle -->
+        <g>
+          <template v-for="row in gridCountY" :key="'ind-row-'+(row-1)">
+            <template v-for="col in gridCountX" :key="'ind-sq-'+(row-1)+'-'+(col-1)">
+              <g
+                v-if="props.gridStitches && props.gridStitches[row-1] && props.gridStitches[row-1][col-1] && props.gridStitches[row-1][col-1].type !== 'empty' && !isCellInShape(row-1, col-1)"
+                v-html="renderStitchSymbol(props.gridStitches[row-1][col-1], ((col-1) * shapeStyle.width / gridCountX), ((row-1) * shapeStyle.height / gridCountY), shapeStyle.width / gridCountX)"
+                style="opacity:0.35; pointer-events:none;"
+              />
+            </template>
+          </template>
         </g>
       </svg>
     </div>
