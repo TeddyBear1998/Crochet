@@ -8,7 +8,8 @@ const props = defineProps({
   itemSizeX: String,
   itemSizeY: String,
   zoom: Number,
-  selectedColor: String // new prop
+  selectedColor: String, // new prop
+  comments: String // new prop for comments
 })
 const emit = defineEmits([
   'update:selectedType',
@@ -19,10 +20,11 @@ const emit = defineEmits([
   'resetGridStitches',
   'exportGridToJson',
   'importGridFromJson',
-  'update:selectedColor' // new emit
+  'update:selectedColor', // new emit
+  'update:comments' // new emit for comments
 ])
 
-const { selectedType, selectedShape, itemSizeX, itemSizeY, zoom, selectedColor } = toRefs(props)
+const { selectedType, selectedShape, itemSizeX, itemSizeY, zoom, selectedColor, comments } = toRefs(props)
 
 function updateType(e) {
   emit('update:selectedType', e.target.value)
@@ -73,6 +75,10 @@ function importGrid() {
 function updateColor(e) {
   emit('update:selectedColor', e.target.value)
 }
+
+function updateComments(e) {
+  emit('update:comments', e.target.value)
+}
 </script>
 
 <template>
@@ -109,13 +115,17 @@ function updateColor(e) {
       <span>{{ zoom }}x</span>
     </div>
     <div class="form-group">
-      <button @click="resetGrid" style="width:100%;padding:0.5rem;background:#1769aa;color:#fff;border:none;border-radius:4px;cursor:pointer;">Reset Grid</button>
+      <label for="comments">Comments</label>
+      <textarea id="comments" :value="comments" @input="updateComments" rows="3" style="width:100%;resize:vertical;"></textarea>
     </div>
     <div class="form-group">
-      <button @click="exportGrid" style="width:100%;padding:0.5rem;background:#1769aa;color:#fff;border:none;border-radius:4px;cursor:pointer;">Export JSON</button>
+      <button @click="resetGrid" type="button" style="width:100%;padding:0.5rem;background:#1769aa;color:#fff;border:none;border-radius:4px;cursor:pointer;">Reset Grid</button>
     </div>
     <div class="form-group">
-      <button @click="importGrid" style="width:100%;padding:0.5rem;background:#1769aa;color:#fff;border:none;border-radius:4px;cursor:pointer;">Import JSON</button>
+      <button @click="exportGrid" type="button" style="width:100%;padding:0.5rem;background:#1769aa;color:#fff;border:none;border-radius:4px;cursor:pointer;">Export JSON</button>
+    </div>
+    <div class="form-group">
+      <button @click="importGrid" type="button" style="width:100%;padding:0.5rem;background:#1769aa;color:#fff;border:none;border-radius:4px;cursor:pointer;">Import JSON</button>
     </div>
   </aside>
 </template>
@@ -163,5 +173,8 @@ small {
   margin-top: 0.5rem;
   font-size: 0.8rem;
   color: #555;
+}
+textarea {
+  font-size: 1rem;
 }
 </style>

@@ -52,6 +52,7 @@ const itemSizeX = ref('')
 const itemSizeY = ref('')
 const zoom = ref(2)
 const selectedColor = ref('#1769aa') // default blue
+const comments = ref('') // new: comments state
 
 // Step 1: State management for grid stitches (store type, not color)
 const defaultGridSizeX = computed(() => {
@@ -104,7 +105,8 @@ function exportGridToJson() {
     sizeX: defaultGridSizeX.value,
     sizeY: defaultGridSizeY.value,
     zoom: zoom.value,
-    gridStitches: gridStitches.value
+    gridStitches: gridStitches.value,
+    comments: comments.value // include comments in export
   }
   const json = JSON.stringify(data, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
@@ -130,13 +132,18 @@ function importGridFromJson(data) {
   itemSizeY.value = String(data.sizeY)
   zoom.value = data.zoom
   gridStitches.value = data.gridStitches
+  if (typeof data.comments === 'string') {
+    comments.value = data.comments
+  } else {
+    comments.value = ''
+  }
 }
 </script>
 
 <template>
   <main class="main-layout">
     <!-- Hamburger for mobile -->
-    <button class="hamburger" @click="toggleMobileMenu" aria-label="Open menu">
+    <button class="hamburger" @click="toggleMobileMenu" aria-label="Open menu" type="button">
       <span></span><span></span><span></span>
     </button>
     <aside
@@ -152,11 +159,12 @@ function importGridFromJson(data) {
         v-model:itemSizeY="itemSizeY"
         v-model:zoom="zoom"
         v-model:selectedColor="selectedColor"
+        v-model:comments="comments"
         @resetGridStitches="resetGridStitches"
         @exportGridToJson="exportGridToJson"
         @importGridFromJson="importGridFromJson"
       />
-      <button class="close-menu" @click="toggleMobileMenu" aria-label="Close menu">×</button>
+      <button class="close-menu" @click="toggleMobileMenu" aria-label="Close menu" type="button">×</button>
     </aside>
     <section class="main-content">
       <ShapePreview
